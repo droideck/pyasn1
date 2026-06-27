@@ -1,3 +1,11 @@
+Revision 0.6.4, released XX-XX-2026
+---------------------------------------
+
+- Fixed OverflowError from BER/CER/DER length values that fit in the
+  supported 8-octet length field but exceed the platform maximum readable
+  size. Such oversized definite lengths are now rejected with PyAsn1Error.
+  [pr #108](https://github.com/pyasn1/pyasn1/pull/108)
+
 Revision 0.6.3, released 16-03-2026
 ---------------------------------------
 

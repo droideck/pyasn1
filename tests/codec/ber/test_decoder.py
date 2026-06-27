@@ -2168,6 +2168,44 @@ class LengthFieldLimitTestCase(BaseTestCase):
         else:
             assert False, 'Overflowing length value not rejected'
 
+    def testLengthValueAbovePlatformLimitIsRejected(self):
+        """Length value exceeding sys.maxsize must be rejected."""
+        originalMaxsize = decoder.sys.maxsize
+        decoder.sys.maxsize = 0x7fffffff
+        try:
+            # 0x84 = long form, 4 length octets, value 2**31
+            payload = b'\x04\x84\x80\x00\x00\x00'
+            try:
+                decoder.decode(payload)
+            except error.PyAsn1Error as exc:
+                assert 'maximum readable size' in str(exc).lower(), \
+                    'Error message missing max size info: %s' % exc
+            except OverflowError:
+                assert False, 'Got OverflowError instead of PyAsn1Error'
+            else:
+                assert False, 'Length above sys.maxsize not rejected'
+        finally:
+            decoder.sys.maxsize = originalMaxsize
+
+    def testLengthValueAtPlatformLimitIsNotRejected(self):
+        """Length value equal to sys.maxsize must pass the length guard."""
+        originalMaxsize = decoder.sys.maxsize
+        decoder.sys.maxsize = 0x7fffffff
+        try:
+            # 0x84 = long form, 4 length octets, value 2**31 - 1. The
+            # payload is intentionally absent so success means EndOfStreamError.
+            payload = b'\x04\x84\x7f\xff\xff\xff'
+            try:
+                decoder.decode(payload)
+            except error.EndOfStreamError:
+                pass
+            except error.PyAsn1Error as exc:
+                assert False, 'Length equal to sys.maxsize rejected: %s' % exc
+            else:
+                assert False, 'Unexpectedly decoded payload with missing body'
+        finally:
+            decoder.sys.maxsize = originalMaxsize
+
     def testMaxAllowedLengthFieldWorks(self):
         """8-byte length field (the maximum allowed) must be accepted."""
         # 0x88 = long form, 8-byte length, value = 5
