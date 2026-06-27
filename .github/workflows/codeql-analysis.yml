@@ -1,0 +1,32 @@
+---
+name: CodeQL
+
+on:
+  push:
+    branches: [ "main", "v*" ]
+  pull_request:
+    branches: [ "main", "v*" ]
+  schedule:
+    - cron: "37 8 * * 1"
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    name: Analyze Python and Actions
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: Checkout repository
+        uses: "actions/checkout@v4"
+
+      - name: Initialize CodeQL
+        uses: "github/codeql-action/init@v4"
+        with:
+          languages: "python,actions"
+          build-mode: "none"
+          queries: "security-extended"
+
+      - name: Perform CodeQL Analysis
+        uses: "github/codeql-action/analyze@v4"
